@@ -29,6 +29,10 @@ export async function deployPolygonZkEVMDeployer(
     const PolgonZKEVMDeployerFactory = await ethers.getContractFactory("PolygonZkEVMDeployer", signer);
 
     const deployTxZKEVMDeployer = (await PolgonZKEVMDeployerFactory.getDeployTransaction(deployerAddress)).data;
+    
+    const provider = signer.provider;
+    const network = await provider.getNetwork();
+    const chainId = network.chainId;
 
     const gasLimit = BigInt(1000000); // Put 1 Million, aprox 650k are necessary
     const gasPrice = BigInt(ethers.parseUnits(gasPriceKeylessDeployment, "gwei"));
@@ -39,6 +43,7 @@ export async function deployPolygonZkEVMDeployer(
         s: "0x5ca1ab1e", // Equals 0x000000000000000000000000000000000000000000000000000000005ca1ab1e
     };
     const tx = ethers.Transaction.from({
+        chainid: chainId,
         to: null, // bc deployment transaction, "to" is "0x"
         nonce: 0,
         value: 0,
