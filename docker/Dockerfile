@@ -1,7 +1,7 @@
 FROM ethereum/client-go:v1.12.0
 
 RUN apk update
-RUN apk add --no-cache nginx
+RUN apk add --no-cache nginx bash
 
 RUN nginx -v
 
