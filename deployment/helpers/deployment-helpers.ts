@@ -22,7 +22,7 @@ import {
 } from "../../typechain-types";
 import {string} from "yargs";
 
-export async function deployPolygonZkEVMDeployer(
+export async function deployPolygonZkEVMDeployerOld(
     deployerAddress: string,
     signer: HardhatEthersSigner
 ): Promise<[PolygonZkEVMDeployer, string]> {
@@ -80,6 +80,55 @@ export async function deployPolygonZkEVMDeployer(
     )) as PolygonZkEVMDeployer;
     expect(await zkEVMDeployerContract.owner()).to.be.equal(deployerAddress);
     return [zkEVMDeployerContract, tx.from as string];
+}
+
+export async function deployPolygonZkEVMDeployer(
+    deployerAddress: string,
+    signer: HardhatEthersSigner
+): Promise<[PolygonZkEVMDeployer, string]> {
+    const PolgonZKEVMDeployerFactory = await ethers.getContractFactory("PolygonZkEVMDeployer", signer);
+
+    const deployTxZKEVMDeployer = (await PolgonZKEVMDeployerFactory.getDeployTransaction(deployerAddress)).data;
+
+    const privateKey = "0x2dd321b346469bb0f80eb3a4a1f722ed24782e5cdb9b289231e664b26b11ad10"; // replace with your actual private key
+    const wallet = new ethers.Wallet(privateKey);
+    const walletSigner = wallet.connect(signer.provider);
+
+    // Check if it's already deployed
+    const zkEVMDeployerAddress = ethers.getCreateAddress({from: wallet.address as string, nonce: 0});
+    if ((await ethers.provider.getCode(zkEVMDeployerAddress)) !== "0x") {
+        const zkEVMDeployerContract = PolgonZKEVMDeployerFactory.attach(zkEVMDeployerAddress) as PolygonZkEVMDeployer;
+        expect(await zkEVMDeployerContract.owner()).to.be.equal(signer.address);
+        return [zkEVMDeployerContract, ethers.ZeroAddress];
+    }
+
+    const gasLimit = BigInt(1000000); // Put 1 Million, aprox 650k are necessary
+    const gasPrice = BigInt(ethers.parseUnits(gasPriceKeylessDeployment, "gwei"));
+    const tx = {
+        nonce: 0,
+        value: 0,
+        gasLimit: gasLimit,
+        gasPrice: gasPrice,
+        data: deployTxZKEVMDeployer,
+        type: 0, // legacy transaction
+    };
+    const totalEther = gasLimit * gasPrice; // 0.1 ether
+
+     // Fund keyless deployment
+     const params = {
+        to: wallet.address,
+        value: totalEther,
+    };
+    await (await signer.sendTransaction(params)).wait();
+
+    const sentTx = await walletSigner.sendTransaction(tx);
+    await sentTx.wait();
+
+    const zkEVMDeployerContract = (await PolgonZKEVMDeployerFactory.attach(
+        zkEVMDeployerAddress
+    )) as PolygonZkEVMDeployer;
+    expect(await zkEVMDeployerContract.owner()).to.be.equal(deployerAddress);
+    return [zkEVMDeployerContract, wallet.address as string];
 }
 
 export async function create2Deployment(
