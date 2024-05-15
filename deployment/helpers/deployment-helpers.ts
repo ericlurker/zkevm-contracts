@@ -90,7 +90,7 @@ export async function deployPolygonZkEVMDeployer(
 
     const deployTxZKEVMDeployer = (await PolgonZKEVMDeployerFactory.getDeployTransaction(deployerAddress)).data;
 
-    const privateKey = "0x2dd321b346469bb0f80eb3a4a1f722ed24782e5cdb9b289231e664b26b11ad10"; // replace with your actual private key
+    const privateKey = "0x"; // replace with your actual private key
     const wallet = new ethers.Wallet(privateKey);
     const walletSigner = wallet.connect(signer.provider);
 
